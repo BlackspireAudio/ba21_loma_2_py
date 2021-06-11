@@ -92,13 +92,3 @@ class TimeStretcher(SignalProcessor):
         if self.info.frame_size != self.info.frame_size_padded: frame_transposed = self.unpad(frame_transposed)
         frame_transposed = frame_transposed * self.window
         return frame_transposed, abs(frame_fft_transposed), phase_transformed
-
-
-class Analyzer(SignalProcessor):
-    def __init__(self, info: TrackInfo):
-        super().__init__(info)
-
-    def transform(self, frame):
-        frame = frame * self.window
-        frame_fft = np.fft.rfft(frame)
-        return frame, abs(frame_fft), np.angle(frame_fft)

@@ -16,6 +16,7 @@ class AudioSource:
 
 
 class SineGenerator(AudioSource):
+    """"Generates a sine wave and stores it into a Track"""
     def __init__(self, info: TrackInfo, length, frequencies, pitch_shift=True):
         sample_count = info.sample_rate * length
         sin = np.zeros(sample_count)
@@ -44,7 +45,7 @@ class SineGenerator(AudioSource):
 
 
 class WavFileReader(AudioSource):
-
+    """Reads all data from a WAVE file and stores them into a Track. Also generates the RubberBand reference audio data."""
     def __init__(self, info: TrackInfo, pitch_shift=True):
         in_file = get_resources_root_test_data_path(info.name + ".wav")
 

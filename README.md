@@ -24,22 +24,13 @@ described here https://github.com/bmcfee/pyrubberband/issues/18#issuecomment-786
 
 ## Algorithms
 
-| Name | Description | Status | Performance | Quality | Source| | ------------- | ------------- | ------------- |
------------- | | Phase Vocoder | Simple phase vocoder limited to horizontal phase propagation | Complete | Fast |
-acceptable for melodic, unusable for percussion | Based on DAFX Chapter 7.4.4 Block by block
-approach http://dafx.de/DAFX_Book_Page/index.html | | Phase Locked Identity Vocoder | Advanced phase vocoder peak
-detection and horizontal / static vertical phase propagation | Complete | Med | Good results for percussion, has issue
-with broad harmonic envelopes | Based on Improved Phase Vocoder Time-Scale Modification of Audio Chapter III.C.2 Scaled
-Phase Locking https://ieeexplore.ieee.org/document/759041 | | Phase Locked Scaled Vocoder | Advanced phase vocoder peak
-detection and horizontal / static vertical phase propagation | Complete | Med | Good results for percussion, has issue
-with broad harmonic envelopes | Based on Improved Phase Vocoder Time-Scale Modification of Audio Chapter III.C.2 Scaled
-Phase Locking https://ieeexplore.ieee.org/document/759041l | | Phase Laminar Vocoder | Advanced phase vocoder with
-horizontal and adaptive vertical phase propagation | Complete | Slow (non-real-time) | Acceptable overall results, but
-lacks clairity | Based on Rubberband Source Code StretcherProcess.cpp Method:
-ModifyChunk https://breakfastquay.com/rubberband/ | | Phase Locked Dynamic Vocoder | Advanced phase vocoder peak
-detection and horizontal / dynamic vertical phase propagation | Complete | Slow | Best overall results (except
-percussion). Only works for real-time with tolerance > 10**-4 | Based on Phase Vocoder Done Right pseudo
-code https://www.researchgate.net/publication/319503719_Phase_Vocoder_Done_Right |
+| Name | Description | Status | Performance | Quality | Source| 
+| ------------- | ------------- | ------------- | ------------ | ------------ | ------------ | 
+| Phase Vocoder | Simple phase vocoder limited to horizontal phase propagation | Complete | Fast | acceptable for melodic, unusable for percussion | Based on DAFX Chapter 7.4.4 Block by block approach http://dafx.de/DAFX_Book_Page/index.html | 
+| Phase Locked Identity Vocoder | Advanced phase vocoder peak detection and horizontal / static vertical phase propagation | Complete | Med | Good results for percussion, has issue with broad harmonic envelopes | Based on Improved Phase Vocoder Time-Scale Modification of Audio Chapter III.C.2 Scaled Phase Locking https://ieeexplore.ieee.org/document/759041 | 
+| Phase Locked Scaled Vocoder | Advanced phase vocoder peak detection and horizontal / static vertical phase propagation | Complete | Med | Good results for percussion, has issue with broad harmonic envelopes | Based on Improved Phase Vocoder Time-Scale Modification of Audio Chapter III.C.2 Scaled Phase Locking https://ieeexplore.ieee.org/document/759041l | 
+| Phase Laminar Vocoder | Advanced phase vocoder with horizontal and adaptive vertical phase propagation | Complete | Slow (non-real-time) | Acceptable overall results, but lacks clairity | Based on Rubberband Source Code StretcherProcess.cpp Method: ModifyChunk https://breakfastquay.com/rubberband/ | 
+| Phase Locked Dynamic Vocoder | Advanced phase vocoder peak detection and horizontal / dynamic vertical phase propagation | Complete | Slow | Best overall results (except percussion). Only works for real-time with tolerance > 10**-4 | Based on Phase Vocoder Done Right pseudo code https://www.researchgate.net/publication/319503719_Phase_Vocoder_Done_Right |
 
 ## Transient Detection
 

@@ -13,60 +13,13 @@ from main.dsp.eval import evaluate
 
 
 def main(argv):
-    # inputfile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\heartache_-5\\reference_-5.wav"
+    """Start of the analyzer. Translates the commandline input and analyzes accordingly"""
     inputfile = ''
-
-    # comparefile = ''
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\mixed\\normal project Project\\heartache_-5.wav"
-
-    # input_dir = ""
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\heartache_-5"
-
-    #basendrum
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_percussive_5"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\08. midi_percussive_+5"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\percussive\\midi_percussive_+5.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_percussive_-5"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\07. midi_percussive_-5"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\percussive\\midi_percussive_-5.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_percussive_12"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\06. midi_percussive_+12"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\percussive\\midi_percussive_+12.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_percussive_-12"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\05. midi_percussive_-12"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\percussive\\midi_percussive_-12.wav"
-
-    #mixed
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_mixed_5"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\04. midi_mixed_+5"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\mixed\\midi_mixed_+5.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_mixed_-5"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\03. midi_mixed_-5"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\mixed\\midi_mixed_-5.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_mixed_12"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\02. midi_mixed_+12"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\mixed\\midi_mixed_+12.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\01. midi_mixed_-12"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_mixed_-12"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\mixed\\midi_mixed_-12.wav"
-
-    #melodic
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_melodic_5"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\12. midi_melodic_+5"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\melodic\\midi_melodic_+5.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_melodic_-5"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\11. midi_melodic_-5"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\melodic\\midi_melodic_-5.wav"
-    input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_melodic_12"
-    input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\ba21_loma_2_py\\res\\out\\midi_melodic_12"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\09. midi_melodic_+12"
-    comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\melodic\\midi_melodic_+12.wav"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\true names\\midi_melodic_-12"
-    # input_dir = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\test sounds\\10. midi_melodic_-12"
-    # comparefile = "C:\\Users\\Alex\\Documents\\zhaw\\BA\\reference songs\\simi\\melodic\\midi_melodic_-12.wav"
+    comparefile = ''
+    input_dir = ''
 
     try:
-        opts, args = getopt.getopt(argv, "hi:c:", ["ifile=", "cfile="])
+        opts, args = getopt.getopt(argv, "hi:I:c:", ["ifile=", "cfile=", "dir="])
     except getopt.GetoptError:
         displayHelp(2)
     for opt, arg in opts:
@@ -74,16 +27,20 @@ def main(argv):
             displayHelp(0)
         elif opt in ("-i", "--ifile"):
             inputfile = arg
+        elif opt in ("-I", "--idir"):
+            input_dir = arg
         elif opt in ("-c", "--cfile"):
             comparefile = arg
 
+    print(inputfile, comparefile, input_dir)
+
     if inputfile == '' and input_dir == '':
-        print("no input file selected")
+        print("no input file/dir selected")
         displayHelp(2)
     if comparefile == "":
         print("no compare file selected")
         displayHelp(2)
-    if input_dir != "":
+    if input_dir != '':
         print("inputfile: " + inputfile + " comparefile: " + comparefile)
         analyze_folder(input_dir, comparefile)
     else:
@@ -91,11 +48,12 @@ def main(argv):
 
 
 def analyze(inputfile, comparefile, ref_samples=[]):
+    """"compares an input file with a compare file using the evaluate method"""
     track = getBaseTrack()
     samples, track.info.sample_rate = getSamples(inputfile)
     track.info.setup()
     track.info.name = os.path.basename(os.path.normpath(inputfile))
-    track.transformed["analyzer"] = Result(samples, 1, track.info.sample_rate)
+    track.synthesized["analyzer"] = Result(samples, 1, track.info.sample_rate)
     # track.base = wrapper.process(dsp, track.base)
 
     if len(ref_samples) == 0:
@@ -109,6 +67,7 @@ def analyze(inputfile, comparefile, ref_samples=[]):
     return track.reference
 
 def analyze_folder(input_dir, comparefile):
+    """reads all files from a given folder and compares each as an input file against the compare file"""
     onlyfiles = [f for f in listdir(input_dir) if isfile(join(input_dir, f)) and os.path.splitext(f)[1] == ".wav"]
     ref_samples = []
     for file in onlyfiles:
@@ -119,14 +78,14 @@ def analyze_folder(input_dir, comparefile):
             else:
                 analyze(input_dir + "\\" + file, comparefile, ref_samples)
 
-
-
 def displayHelp(level):
-    print('analyzer.py -i <inputfile> -c <comparefile>')
+    """"Displays help output"""
+    print('analyzer.py {-i <input file>|-I <input dir>} -c <compare file>')
     sys.exit(level)
 
 
 def getBaseTrack():
+    """"Creates a base track for the analyzer"""
     track_info = TrackInfo()
     track_info.sample_rate = 44100
     track_info.hop_size_factor = 4
@@ -141,6 +100,7 @@ def getBaseTrack():
 
 
 def getSamples(filepath):
+    """"Reads the samples from the given file"""
     return sf.read(filepath, dtype='float32')
 
 

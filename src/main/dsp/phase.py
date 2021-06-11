@@ -52,12 +52,17 @@ class PhaseShifter:
     def process(self, frame_fft: List[complex]) -> List[float]:
         return []
 
-    def high_frequency_transient_detection(self, current_magnitude):
+    def high_frequency_transient_detection(self, magnitude):
+        """"
+        Sums the magnitudes of all bins weighted by their frequencies and puts the results in a moving median. If the median is rising three subsequent frames a transient is detected.
+        :param magnitude: magnitude of the current frame
+        :return: high frequency transient probability in range from 0 to 1
+        """
         high_freq_mag_sum = 0.0
         transient_probability = 0.0
         # sum the magnitudes of all bins weighted by their center frequency
-        for n in range(0, len(current_magnitude)):
-            high_freq_mag_sum = high_freq_mag_sum + current_magnitude[n] * n
+        for n in range(0, len(magnitude)):
+            high_freq_mag_sum = high_freq_mag_sum + magnitude[n] * n
 
         high_freq_deriv = high_freq_mag_sum - self.high_freq_mag_sum_last
         self.high_freq_filter.put(high_freq_mag_sum)
@@ -84,27 +89,32 @@ class PhaseShifter:
         self.last_high_freq_deriv_delta = high_freq_deriv_delta
         return transient_probability
 
-    def percussive_transient_detection(self, current_magnitude):
-        self.max_mag_avg_queue.push_pop(max(current_magnitude))
+    def percussive_transient_detection(self, magnitude):
+        """"
+        Calculates the percussive transient probability by counting all the significant and the non zero bins.
+        :param magnitude: magnitude of the current frame
+        :return: percussive transient probability in range from 0 to 1
+        """
+        self.max_mag_avg_queue.push_pop(max(magnitude))
         zeroThresh = self.transient_magnitude_min_factor * self.max_mag_avg_queue.get_avg()
 
         count = 0
         nonZeroCount = 0
 
-        for n in range(0, len(current_magnitude)):
+        for n in range(0, len(magnitude)):
             magnitude_increase_ratio = 0.0
             if self.last_magnitude[n] > zeroThresh:
                 # calculate magnitude growth since last frame if last magnitude of current bin is non-zero
-                magnitude_increase_ratio = current_magnitude[n] / self.last_magnitude[n]
-            elif current_magnitude[n] > zeroThresh:
+                magnitude_increase_ratio = magnitude[n] / self.last_magnitude[n]
+            elif magnitude[n] > zeroThresh:
                 # if last magnitude of current bin is below zero threshold but current magnitude is significant, default to 3dB ratio
                 magnitude_increase_ratio = self.magnitude_ratio_3db
             # count significant magnitude increases
             if magnitude_increase_ratio >= self.magnitude_ratio_3db: count += 1
             # count significant magnitudes
-            if current_magnitude[n] > zeroThresh: nonZeroCount += 1
+            if magnitude[n] > zeroThresh: nonZeroCount += 1
 
-        self.last_magnitude = current_magnitude
+        self.last_magnitude = magnitude
         if (nonZeroCount == 0):
             return 0
         # return the ratio of bins with significant magnitude and bins with significant magnitude which translates to the likelihood of the current frame being a transient
@@ -112,24 +122,39 @@ class PhaseShifter:
         # small difference between count and nonZeroCount indicate few significant bins without significant growth -> likely a transient
         return count / nonZeroCount
 
-    def compound_transient_detection(self, current_magnitude):
+    def compound_transient_detection(self, magnitude):
+        """"
+        Calculates the transient probability according to the selected TransientDetectionType.
+        :param magnitude: magnitude of the current frame
+        :return: transient probability in range from 0 to 1
+        """
         if self.transient_detection_mode.__eq__(TransientDetectionType.PERCUSSIVE.value):
-            return self.percussive_transient_detection(current_magnitude)
+            return self.percussive_transient_detection(magnitude)
         elif self.transient_detection_mode.__eq__(TransientDetectionType.COMPOUND):
-            return max(self.percussive_transient_detection(current_magnitude), self.high_frequency_transient_detection(current_magnitude))
+            return max(self.percussive_transient_detection(magnitude), self.high_frequency_transient_detection(magnitude))
         elif self.transient_detection_mode.__eq__(TransientDetectionType.HIGH_FREQ):
-            return self.high_frequency_transient_detection(current_magnitude)
+            return self.high_frequency_transient_detection(magnitude)
         return 0
 
-    def has_transient(self, magnitude):
+    def transient_detection(self, magnitude):
+        """"
+        Calculates if a transient is detected by comparing the current transient likelihood with the last likelihood and a likelihood threshold.
+        :param magnitude: magnitude of the current frame
+        :return: True if transient probability indicates transient
+        """
         transient_prob = self.compound_transient_detection(magnitude)
-        if transient_prob > self.transient_prob_prev and transient_prob > self.transient_prob_threshold:
+        if transient_prob > 0 and transient_prob > self.transient_prob_prev and transient_prob > self.transient_prob_threshold:
             self.transient_prob_prev = transient_prob
             return True
         self.transient_prob_prev = transient_prob
         return False
 
     def phase_reset(self, phase):
+        """"
+        Resets the phases according to the phase reset type and sets the current mid range
+        :param phase: untransformed phase of the current frame
+        :return: returns the default mid_range
+        """
         if self.phase_reset_type.__eq__(PhaseResetType.BAND_LIMITED):
             self.phase_synthesis[0: self.band_low] = phase[0: self.band_low]
             self.phase_synthesis[self.band_high: self.info.frame_size_nyquist] = phase[self.band_high: self.info.frame_size_nyquist]
@@ -157,7 +182,7 @@ class BasicPhaseShifter(PhaseShifter):
         :return: the transformed phase for each bin
         """
         phase_analysis = np.angle(frame_fft)
-        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.has_transient(abs(frame_fft))
+        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.transient_detection(abs(frame_fft))
         mid_range = self.mid_range
 
         if transient_detected:
@@ -243,7 +268,7 @@ class PhaseLockedIdentityShifter(PhaseShifter):
         magnitude = abs(frame_fft)
         phase_synthesis_temp = np.zeros(self.info.frame_size_nyquist)
         mid_range = self.mid_range
-        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.has_transient(magnitude)
+        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.transient_detection(magnitude)
 
         if transient_detected:
             mid_range = self.phase_reset(phase_analysis)
@@ -366,7 +391,7 @@ class PhaseLockedScaledShifter(PhaseShifter):
         phase_synthesis_temp = np.zeros(self.info.frame_size_nyquist)
 
         mid_range = self.mid_range
-        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.has_transient(magnitude)
+        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.transient_detection(magnitude)
 
         if transient_detected:
             mid_range = self.phase_reset(phase_analysis)
@@ -443,7 +468,7 @@ class PhaseLaminarShifter(PhaseShifter):
         magnitude_current = abs(frame_fft)
 
         mid_range = self.mid_range
-        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.has_transient(magnitude_current)
+        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.transient_detection(magnitude_current)
         if transient_detected:
             mid_range = self.phase_reset(phase_analysis)
 
@@ -506,6 +531,12 @@ class PhaseLockedDynamicShifter(PhaseShifter):
         self.phase_delta_prev = np.zeros(self.info.frame_size_nyquist)
 
     def process(self, frame_fft: List[complex]) -> List[float]:
+        """
+        Calculates the expected phase shift using the significant magnitudes from the current and last frame and placing them into a self sorting max heap.
+        Calculating the partial derivatives the phase influenced by the magnitudes in the heap are then propagated in a vertical direction.
+        :param frame_fft: a frame in the frequency domain spectrum
+        :return: the transformed phase for each bin
+        """
         magnitude = abs(frame_fft)
         # get imaginary values from fft
         phase_analysis = np.angle(frame_fft)
@@ -515,7 +546,7 @@ class PhaseLockedDynamicShifter(PhaseShifter):
         phase_delta = phase_delta * self.info.time_stretch_ratio
 
         mid_range = self.mid_range
-        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.has_transient(magnitude)
+        transient_detected = not self.transient_detection_mode.__eq__(TransientDetectionType.NONE) and self.transient_detection(magnitude)
         if transient_detected:
             mid_range = self.phase_reset(phase_analysis)
 

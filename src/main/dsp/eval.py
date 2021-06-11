@@ -26,6 +26,8 @@ def time_align_crop(info: TrackInfo, reference: List[float], transformed: List[f
             min_rmsd = rmsd
             align_offset = i
 
+    print("align offset: ", align_offset)
+
     length = (min(len(transformed), len(reference)) // info.frame_size - skip_frame_count) * info.frame_size
     transformed = transformed[align_offset:length + align_offset]
     reference = reference[:length]
